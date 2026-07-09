@@ -1,149 +1,271 @@
-USE ECommerceAnalytics;
-GO
+
+-- KPI 01
+-- Overall Business Performance
 
 
-SELECT COUNT(*) AS TotalOrders, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit,AVG(Discount) AS AverageDiscount
-FROM Sales;
-------------------
-SELECT Category, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY Category
+SELECT COUNT(*) AS TotalOrders, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit, SUM(Quantity) AS TotalQuantity,AVG(ProfitMargin) AS AvgProfitMargin
+FROM FactSales;
+
+
+-- KPI 02
+-- Total Customers
+SELECT COUNT(*) AS TotalCustomers
+FROM DimCustomer;
+
+
+-- KPI 03
+-- Total Products
+
+SELECT COUNT(*) AS TotalProducts
+FROM DimProduct;
+
+-- KPI 04
+-- Geographic Coverage
+
+
+SELECT COUNT(DISTINCT City) AS TotalCities, COUNT(DISTINCT State) AS TotalStates, COUNT(DISTINCT Region) AS TotalRegions
+FROM DimLocation;
+
+
+
+-- KPI 05
+-- Sales by Category
+
+
+SELECT p.Category, SUM(f.Sales) AS TotalSales, SUM(f.Profit) AS TotalProfit, SUM(f.Quantity) AS TotalQuantity
+FROM FactSales f
+INNER JOIN DimProduct p
+ON f.ProductKey=p.ProductKey
+GROUP BY p.Category
 ORDER BY TotalSales DESC;
 
--------------------
-SELECT TOP 10 ProductName, SUM(Sales) AS TotalSales
-FROM Sales
-GROUP BY ProductName
+
+-- KPI 06 
+-- Sales by SubCategor
+
+SELECT p.SubCategory, SUM(f.Sales) AS TotalSales, SUM(f.Profit) AS TotalProfit FROM FactSales f
+INNER JOIN DimProduct p
+ON f.ProductKey=p.ProductKey
+GROUP BY p.SubCategory
 ORDER BY TotalSales DESC;
 
---------------------
-SELECT Region, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY Region
+
+-- KPI 07
+-- Orders by Discount
+SELECT
+CASE
+WHEN HasDiscount=1 THEN 'Discounted'
+ELSE 'No Discount' END AS DiscountStatus,
+COUNT(*) OrdersCount, SUM(Sales) TotalSales, SUM(Profit) TotalProfit
+FROM FactSales
+GROUP BY
+CASE WHEN HasDiscount=1 THEN 'Discounted'
+ELSE 'No Discount'
+END;
+
+
+
+-- KPI 08
+-- Top 10 Products by Sales
+
+
+SELECT TOP 10
+    p.ProductName,
+    SUM(f.Sales) AS TotalSales,
+    SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimProduct p
+    ON f.ProductKey = p.ProductKey
+GROUP BY p.ProductName
 ORDER BY TotalSales DESC;
 
--- ------------------ SECTION 2 : SALES ANALYSIS -------------------------------
-
-SELECT OrderYear, OrderMonth, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY OrderYear, OrderMonth
-ORDER BY OrderYear, OrderMonth;
 
 
-SELECT Segment,COUNT(*) AS TotalOrders, SUM(Sales) AS TotalSales,AVG(Sales) AS AverageSales
-FROM Sales
-GROUP BY Segment
-ORDER BY TotalSales DESC;
 
-SELECT Category, AVG(ProfitMargin) AS AvgProfitMargin
-FROM Sales
-GROUP BY Category
-ORDER BY AvgProfitMargin DESC;
-
-SELECT HasDiscount, COUNT(*) AS OrdersCount,SUM(Sales) AS TotalSales,SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY HasDiscount;
+-- KPI 09
+-- Top 10 Products by Profit
 
 
--- ------------------ SECTION 3 : PRODUCT ANALYSIS -------------------------------
-
-
-SELECT TOP 10 ProductName, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY ProductName
+SELECT TOP 10
+    p.ProductName,
+    SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimProduct p
+    ON f.ProductKey = p.ProductKey
+GROUP BY p.ProductName
 ORDER BY TotalProfit DESC;
 
 
 
-SELECT TOP 10 ProductName, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY ProductName
-ORDER BY TotalProfit ASC;
+
+-- KPI 10
+-- Category Performance
 
 
-
-
-SELECT ProductName, AVG(Sales) AS AverageSales
-FROM Sales
-GROUP BY ProductName
-ORDER BY AverageSales DESC;
--- ------------------  SECTION 4 : CUSTOMER ANALYSIS -------------------------------
-
-
-
-SELECT TOP 10 CustomerName, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY CustomerName
+SELECT p.Category, COUNT(*) AS Orders, SUM(f.Sales) AS TotalSales, SUM(f.Profit) AS TotalProfit, AVG(f.ProfitMargin) AS AvgProfitMargin
+FROM FactSales f
+INNER JOIN DimProduct p
+    ON f.ProductKey = p.ProductKey
+GROUP BY p.Category
 ORDER BY TotalSales DESC;
 
 
 
-SELECT Segment, COUNT(DISTINCT CustomerID) AS TotalCustomers, SUM(Sales) AS TotalSales
-FROM Sales
-GROUP BY Segment;
+-- KPI 11
+-- Top Customers
 
 
-SELECT Segment, AVG(Sales) AS AverageOrderValue
-FROM Sales
-GROUP BY Segment
-ORDER BY AverageOrderValue DESC;
-
-
--- ------------------ SECTION 5 : GEOGRAPHIC ANALYSIS-------------------------------
-
-
-SELECT State, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY State
-ORDER BY TotalSales DESC;
-
-
-SELECT TOP 10 City, SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY City
+SELECT TOP 10
+    c.CustomerName,
+    c.Segment,
+    SUM(f.Sales) AS TotalSales,
+    SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimCustomer c
+    ON f.CustomerKey = c.CustomerKey
+GROUP BY
+    c.CustomerName,
+    c.Segment
 ORDER BY TotalSales DESC;
 
 
 
-SELECT Region, SUM(Profit) AS TotalProfit
-FROM Sales
-GROUP BY Region
-ORDER BY TotalProfit DESC;
+-- KPI 12
+-- Sales by Segment
+
+SELECT c.Segment, COUNT(DISTINCT c.CustomerID) AS Customers,  SUM(f.Sales) AS TotalSales, SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimCustomer c
+    ON f.CustomerKey = c.CustomerKey
+GROUP BY c.Segment;
 
 
--- ------------------ SECTION 7 : ADVANCED SQL ------------------------------
+-- KPI 13
+-- Sales by Region
 
 SELECT
-
-DENSE_RANK() OVER(ORDER BY SUM(Sales) DESC) AS DenseRank,ProductName,SUM(Sales) AS TotalSales
-FROM Sales
-
-GROUP BY ProductName;
-
-
-
-WITH ProductSales AS
-(
-    SELECT ProductName,SUM(Sales) AS TotalSales
-    FROM Sales
-    GROUP BY ProductName
-)
-SELECT TOP 10 *
-FROM ProductSales
+    l.Region,
+    SUM(f.Sales) AS TotalSales,
+    SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimLocation l
+    ON f.LocationKey = l.LocationKey
+GROUP BY l.Region
 ORDER BY TotalSales DESC;
 
+
+
+-- KPI 14
+-- Top States
+
+
+SELECT TOP 10
+    l.State,
+    SUM(f.Sales) AS TotalSales,
+    SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimLocation l
+    ON f.LocationKey = l.LocationKey
+GROUP BY l.State
+ORDER BY TotalSales DESC;
+
+
+
+
+
+KPI 15
+Monthly Sales Trend
+
+SELECT d.OrderYear, d.OrderMonth, d.OrderMonthName, SUM(f.Sales) AS TotalSales,SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimDate d
+    ON f.DateKey = d.DateKey
+GROUP BY d.OrderYear, d.OrderMonth, d.OrderMonthName
+ORDER BY d.OrderYear, d.OrderMonth;
+
+
+
+
+-- KPI 16
+-- Quarterly Performance
+
+
+SELECT d.OrderYear, d.OrderQuarter, SUM(f.Sales) AS TotalSales, SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimDate d
+    ON f.DateKey = d.DateKey
+GROUP BY d.OrderYear, d.OrderQuarter
+ORDER BY d.OrderYear, d.OrderQuarter;
+
+
+
+-- KPI 17
+-- -- Sales by Weekday
+
+
+SELECT d.OrderWeekday, SUM(f.Sales) AS TotalSales, SUM(f.Profit) AS TotalProfit
+FROM FactSales f
+INNER JOIN DimDate d
+    ON f.DateKey = d.DateKey
+GROUP BY d.OrderWeekday;
+
+
+
+-- KPI 18
+-- Top 5 Products per Category
 
 
 WITH RankedProducts AS
 (
-    SELECT ProductName, SUM(Sales) AS TotalSales,
-    DENSE_RANK() OVER
-    (
-    ORDER BY SUM(Sales) DESC
-    )AS ProductRank
-    FROM Sales
-    GROUP BY ProductName
+SELECT p.Category, p.ProductName, SUM(f.Sales) AS TotalSales,
+ROW_NUMBER() OVER
+(
+PARTITION BY p.Category
+ORDER BY SUM(f.Sales) DESC
+) AS RankNo
+FROM FactSales f
+INNER JOIN DimProduct p
+ON f.ProductKey = p.ProductKey
+GROUP BY p.Category, p.ProductName
 )
-SELECT * FROM RankedProducts
-WHERE ProductRank <= 10;
+SELECT *
+FROM RankedProducts
+WHERE RankNo <= 5;
 
+
+
+-- KPI 19
+-- Product Sales Ranking
+
+
+SELECT p.ProductName, SUM(f.Sales) AS TotalSales,
+DENSE_RANK() OVER
+(
+ORDER BY SUM(f.Sales) DESC
+) AS SalesRank
+FROM FactSales f
+INNER JOIN DimProduct p
+    ON f.ProductKey = p.ProductKey
+GROUP BY p.ProductName;
+
+
+
+
+
+-- KPI 20
+-- Profit Classification
+
+SELECT
+CASE
+WHEN Profit < 0 THEN 'Loss'
+WHEN Profit BETWEEN 0 AND 100 THEN 'Low Profit'
+WHEN Profit BETWEEN 100 AND 500 THEN 'Medium Profit'
+ELSE 'High Profit' END AS ProfitCategory,COUNT(*) AS Orders,SUM(Sales) AS TotalSales, SUM(Profit) AS TotalProfit
+FROM FactSales
+GROUP BY
+CASE
+WHEN Profit < 0 THEN 'Loss'
+WHEN Profit BETWEEN 0 AND 100 THEN 'Low Profit'
+WHEN Profit BETWEEN 100 AND 500 THEN 'Medium Profit'
+ELSE 'High Profit'
+END;
